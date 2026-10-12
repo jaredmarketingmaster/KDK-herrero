@@ -11,24 +11,27 @@
   <link rel="apple-touch-icon" href="../assets/img/apple-touch-icon.png">
   <link rel="preload" href="../assets/fonts/playfair-display-400.woff2" as="font" type="font/woff2" crossorigin>
   <link rel="preload" href="../assets/fonts/inter-400.woff2" as="font" type="font/woff2" crossorigin>
-  <link rel="stylesheet" href="../assets/css/styles.css">
+  <link rel="stylesheet" href="../assets/css/styles.css?v=20261012">
   <script>document.documentElement.classList.add("js");</script>
-  <script src="../assets/js/config.js"></script>
-  <script src="../assets/js/consent.js"></script>
-  <script src="../assets/js/datalayer.js" defer></script>
-  <script src="../assets/js/main.js" defer></script>
+  <script src="../assets/js/config.js?v=20261012" defer></script>
+  <script src="../assets/js/consent.js?v=20261012" defer></script>
+  <script src="../assets/js/datalayer.js?v=20261012" defer></script>
+  <script src="../assets/js/main.js?v=20261012" defer></script>
 </head>
 <body>
+
+  <a class="saltar" href="#contenido">Saltar al contenido</a>
+  <div class="progreso-lectura" aria-hidden="true"><span data-progreso-lectura></span></div>
 
   <header class="barra" id="inicio">
     <div class="contenedor">
       <a class="barra__logo" href="../index.html">
-        <img src="../assets/img/logo-kdk.png" alt="KDK Design" width="660" height="131">
+        <img src="../assets/img/logo-kdk.webp" alt="KDK Design" width="660" height="131">
       </a>
     </div>
   </header>
 
-  <main class="legal">
+  <main class="legal" id="contenido" tabindex="-1">
     <div class="contenedor">
       <article class="legal__columna">
         <p><span class="pendiente">[PENDIENTE abogado: borrador para revisión]</span></p>
@@ -69,9 +72,10 @@
   </main>
 
   <footer class="pie">
+    <svg class="flor flor--pie" viewBox="0 0 200 200" aria-hidden="true" focusable="false"><circle class="flor__aro" pathLength="1" cx="100" cy="100" r="96"/><g class="flor__petalos"><path pathLength="1" transform="rotate(0 100 100)" d="M100 100C84 88 80 40 100 30C120 40 116 88 100 100Z"/><path pathLength="1" transform="rotate(72 100 100)" d="M100 100C84 88 80 40 100 30C120 40 116 88 100 100Z"/><path pathLength="1" transform="rotate(144 100 100)" d="M100 100C84 88 80 40 100 30C120 40 116 88 100 100Z"/><path pathLength="1" transform="rotate(216 100 100)" d="M100 100C84 88 80 40 100 30C120 40 116 88 100 100Z"/><path pathLength="1" transform="rotate(288 100 100)" d="M100 100C84 88 80 40 100 30C120 40 116 88 100 100Z"/></g><circle pathLength="1" cx="100" cy="100" r="8"/><circle class="flor__punto" cx="100" cy="100" r="2.5"/></svg>
     <div class="contenedor">
       <div class="pie__logo">
-        <img src="../assets/img/logo-kdk.png" alt="KDK Design" width="660" height="131" loading="lazy" decoding="async">
+        <img src="../assets/img/logo-kdk.webp" alt="KDK Design" width="660" height="131" loading="lazy" decoding="async">
       </div>
       <p class="pie__datos">
         <span class="pendiente">[PENDIENTE: titular legal, NIF y domicilio]</span>

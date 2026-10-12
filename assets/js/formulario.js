@@ -350,6 +350,11 @@
     Object.keys(pasos).forEach(function (k) {
       pasos[k].setAttribute("data-activo", String(Number(k) === n));
     });
+    form.setAttribute("data-paso-actual", String(n));
+    /* Reinicia la animación de entrada del paso (solo visual). */
+    pasos[n].classList.remove("is-entrando");
+    void pasos[n].offsetWidth;
+    pasos[n].classList.add("is-entrando");
     var titulo = pasos[n].querySelector(".formulario__paso-titulo");
     var caja_ = caja.getBoundingClientRect();
     if (caja_.top < 0 || caja_.top > window.innerHeight * 0.5) {
@@ -594,6 +599,13 @@
     var bloque = document.createElement("div");
     bloque.className = "gracias";
     bloque.setAttribute("tabindex", "-1");
+
+    /* Flor de la marca dibujada a línea (decorativa). */
+    var flor = document.querySelector("[data-plantilla-flor]");
+    if (flor && flor.content) {
+      var ornamento = flor.content.cloneNode(true);
+      bloque.appendChild(ornamento);
+    }
 
     var titulo = document.createElement("h3");
     titulo.textContent = nombre ? "Gracias, " + nombre + "." : "Gracias.";

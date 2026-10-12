@@ -40,6 +40,25 @@
     if (concepto) pie.appendChild(el("span", "etiqueta etiqueta--concepto", "Concepto"));
   }
 
+  /* CTA con el mismo marcado que los del HTML: el texto duplicado
+     (aria-hidden) solo sirve para el efecto de rodillo al pasar el ratón. */
+  function crearCta(texto, ubicacion) {
+    var cta = el("a", "cta");
+    cta.href = "#formulario";
+    cta.setAttribute("data-cta", ubicacion);
+    var rodillo = el("span", "cta__texto");
+    rodillo.appendChild(el("span", "cta__linea", texto));
+    var copia = el("span", "cta__linea", texto);
+    copia.setAttribute("aria-hidden", "true");
+    rodillo.appendChild(copia);
+    cta.appendChild(rodillo);
+    cta.appendChild(document.createTextNode(" "));
+    var flecha = el("span", "flecha", "→");
+    flecha.setAttribute("aria-hidden", "true");
+    cta.appendChild(flecha);
+    return cta;
+  }
+
   function seccion(idTitulo) {
     var s = el("section", "seccion");
     s.setAttribute("data-seccion", "");
@@ -61,14 +80,7 @@
     var texto = el("div", "video__texto");
     texto.setAttribute("data-reveal", "");
     texto.appendChild(el("p", "", "Planos verticales, macros y animaciones realistas, pensados para anuncios y para destacar en el feed."));
-    var cta = el("a", "cta");
-    cta.href = "#formulario";
-    cta.setAttribute("data-cta", "video");
-    cta.appendChild(document.createTextNode("Ver si encajamos "));
-    var flecha = el("span", "flecha", "→");
-    flecha.setAttribute("aria-hidden", "true");
-    cta.appendChild(flecha);
-    texto.appendChild(cta);
+    texto.appendChild(crearCta("Ver si encajamos", "video"));
 
     var figura = el("figure", "video__pieza marco");
     figura.setAttribute("data-reveal", "");
@@ -124,12 +136,15 @@
     piezas.forEach(function (p) {
       var figura = el("figure", "marco");
       figura.setAttribute("data-reveal", "");
+      var foto = el("div", "foto");
       var img = document.createElement("img");
       img.src = p.src.trim();
       img.alt = p.alt.trim();
       img.loading = "lazy";
       img.decoding = "async";
-      figura.appendChild(img);
+      img.setAttribute("data-parallax", "");
+      foto.appendChild(img);
+      figura.appendChild(foto);
 
       var pie = el("figcaption", "marco__pie");
       if (typeof p.sector === "string" && p.sector.trim()) {

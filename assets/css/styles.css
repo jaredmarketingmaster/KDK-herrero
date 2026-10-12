@@ -73,8 +73,17 @@
   --medianil: clamp(1rem, 2.5vw, 2rem);
   --espacio-seccion: clamp(5rem, 12vw, 10rem);
   --radio: 2px;
-  --duracion: 400ms;
+  --duracion: 800ms;
   --altura-barra-fija: 3.5rem;
+
+  /* Curvas de animación */
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-soft: cubic-bezier(0.25, 0.46, 0.45, 0.94);
+
+  /* Textura de papel: ruido fino centrado en el color de fondo. La media del
+     ruido es el propio crema, así que el tono de marca no se oscurece. */
+  --grano: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n' color-interpolation-filters='sRGB'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0.12 0 0 0 0.9008 0.12 0 0 0 0.889 0.12 0 0 0 0.8616 0 0 0 0 1'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  --grano-calido: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n' color-interpolation-filters='sRGB'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0.12 0 0 0 0.889 0.12 0 0 0 0.8773 0.12 0 0 0 0.8498 0 0 0 0 1'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
 }
 
 /* --- Base ----------------------------------------------------------------- */
@@ -97,7 +106,9 @@ html {
 
 body {
   margin: 0;
-  background: var(--crema);
+  background-color: var(--crema);
+  background-image: var(--grano);
+  background-size: 180px 180px;
   color: var(--carbon);
   font-family: var(--fuente-texto);
   font-size: clamp(1rem, 0.96rem + 0.2vw, 1.0625rem);
@@ -268,11 +279,14 @@ p {
 }
 
 .seccion--calida {
-  background: var(--crema-calido);
+  background-color: var(--crema-calido);
+  background-image: var(--grano-calido);
+  background-size: 180px 180px;
 }
 
 /* Cabecera de sección: filete fino, número pequeño y titular. */
 .seccion__cabecera {
+  position: relative;
   display: grid;
   grid-template-columns: repeat(12, minmax(0, 1fr));
   column-gap: var(--medianil);
@@ -316,19 +330,97 @@ p {
   }
 }
 
-/* --- Animación de aparición --------------------------------------------- */
+/* --- Animación de aparición ---------------------------------------------
+   Fundido + 12 px al entrar en pantalla. Los contenedores [data-escalonado]
+   no se mueven: sus hijos aparecen uno tras otro. Sin JavaScript, o con
+   prefers-reduced-motion: reduce, todo se ve desde el principio. */
 @media (prefers-reduced-motion: no-preference) {
-  .reveal-activo [data-reveal] {
+  .reveal-activo [data-reveal],
+  .reveal-activo [data-reveal][data-escalonado] > * {
     opacity: 0;
     transform: translateY(12px);
     transition:
-      opacity var(--duracion) ease-out,
-      transform var(--duracion) ease-out;
+      opacity var(--duracion) var(--ease-out) var(--retraso, 0ms),
+      transform var(--duracion) var(--ease-out) var(--retraso, 0ms);
   }
 
-  .reveal-activo [data-reveal].is-visible {
+  .reveal-activo [data-reveal].is-visible,
+  .reveal-activo [data-reveal][data-escalonado].is-visible > * {
     opacity: 1;
     transform: none;
+  }
+
+  .reveal-activo [data-reveal][data-escalonado] {
+    opacity: 1;
+    transform: none;
+  }
+
+  [data-escalonado] > :nth-child(2) { --retraso: 90ms; }
+  [data-escalonado] > :nth-child(3) { --retraso: 180ms; }
+  [data-escalonado] > :nth-child(4) { --retraso: 270ms; }
+  [data-escalonado] > :nth-child(5) { --retraso: 360ms; }
+  [data-escalonado] > :nth-child(6) { --retraso: 450ms; }
+  [data-escalonado] > :nth-child(n + 7) { --retraso: 540ms; }
+
+  /* Cabecera de sección: el filete se dibuja, el número aparece y el titular emerge. */
+  .reveal-activo .seccion__cabecera[data-reveal] {
+    opacity: 1;
+    transform: none;
+    border-top-color: transparent;
+  }
+
+  .reveal-activo .seccion__cabecera[data-reveal]::before {
+    content: "";
+    position: absolute;
+    top: -1px;
+    left: 0;
+    right: 0;
+    height: 1px;
+    background: var(--linea);
+    transform: scaleX(0);
+    transform-origin: left center;
+    transition: transform 1.4s var(--ease-out);
+  }
+
+  .reveal-activo .seccion__cabecera[data-reveal].is-visible::before {
+    transform: scaleX(1);
+  }
+
+  .reveal-activo .seccion__cabecera[data-reveal] .num {
+    opacity: 0;
+    transition: opacity 0.8s var(--ease-soft) 0.3s;
+  }
+
+  .reveal-activo .seccion__cabecera[data-reveal].is-visible .num {
+    opacity: 1;
+  }
+
+  .reveal-activo .seccion__cabecera[data-reveal] > h2,
+  .reveal-activo [data-reveal] .encaje__columna > h2 {
+    clip-path: inset(100% -0.5em -0.4em -0.5em);
+    transform: translateY(0.3em);
+    transition:
+      clip-path 1.1s var(--ease-out) 0.12s,
+      transform 1.1s var(--ease-out) 0.12s;
+  }
+
+  .reveal-activo .seccion__cabecera[data-reveal].is-visible > h2,
+  .reveal-activo [data-reveal].is-visible .encaje__columna > h2 {
+    clip-path: inset(-0.4em -0.5em -0.4em -0.5em);
+    transform: none;
+  }
+
+  /* Iconos de línea: se trazan al aparecer. */
+  .reveal-activo [data-reveal] .icono path,
+  .reveal-activo [data-reveal] .icono circle {
+    stroke-dasharray: 1 2;
+    stroke-dashoffset: 1;
+    transition: stroke-dashoffset 1.6s var(--ease-out) calc(var(--retraso, 0ms) + 250ms);
+  }
+
+  .reveal-activo [data-reveal].is-visible .icono path,
+  .reveal-activo [data-reveal].is-visible .icono circle {
+    stroke-dashoffset: 0;
   }
 }
 
@@ -395,10 +487,9 @@ p {
   color: var(--carbon);
   font-family: var(--fuente-texto);
   font-weight: 500;
-  text-decoration: underline;
-  text-decoration-thickness: 1px;
-  text-underline-offset: 0.3em;
+  text-decoration: none;
   cursor: pointer;
+  position: relative;
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -433,10 +524,19 @@ p {
 
 /* --- 01 · Cabecera -------------------------------------------------------- */
 .cabecera {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden; /* respaldo para Safari < 16 */
+  overflow: clip;
   padding-top: clamp(2.5rem, 7vw, 6rem);
 }
 
+.cabecera > .contenedor {
+  position: relative;
+}
+
 .cabecera__antetitulo {
+  position: relative;
   display: grid;
   grid-template-columns: auto 1fr;
   column-gap: 1.25rem;
@@ -515,20 +615,8 @@ p {
 
 .cita {
   margin-top: var(--espacio-seccion);
-  padding-top: clamp(2.5rem, 5vw, 3.5rem);
   text-align: center;
   position: relative;
-}
-
-.cita::before {
-  content: "";
-  position: absolute;
-  top: 0;
-  left: 50%;
-  width: 3rem;
-  height: 1px;
-  background: var(--terracota);
-  transform: translateX(-50%);
 }
 
 .cita p {
@@ -557,11 +645,18 @@ p {
 
 .incluye li {
   display: grid;
-  grid-template-columns: 4.5rem 1fr;
-  column-gap: 1rem;
-  align-items: start;
-  padding-block: 1.75rem;
+  grid-template-columns: 1fr;
+  align-content: start;
+  row-gap: 1.25rem;
+  padding-block: 1.75rem 2rem;
   border-bottom: 1px solid var(--linea);
+}
+
+.incluye__cabeza {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
 }
 
 .incluye__num {
@@ -573,9 +668,9 @@ p {
 }
 
 .incluye p {
-  padding-top: 0.35rem;
   font-size: clamp(1.0625rem, 1rem + 0.25vw, 1.1875rem);
   line-height: 1.5;
+  max-width: 24em;
 }
 
 @media (min-width: 768px) {
@@ -584,8 +679,6 @@ p {
   }
 
   .incluye li {
-    grid-template-columns: 1fr;
-    align-content: start;
     row-gap: 1.75rem;
     padding: 2rem 2rem 2.5rem 0;
   }
@@ -596,7 +689,6 @@ p {
   }
 
   .incluye p {
-    padding-top: 0;
     max-width: 22em;
   }
 }
@@ -804,8 +896,35 @@ p {
   padding-bottom: 0;
 }
 
-.pasos li:last-child::before {
+.pasos li:last-child::before,
+.pasos li:last-child::after {
   display: none;
+}
+
+/* Relleno de la línea según avanza la lectura (main.js fija --llenado). */
+.pasos li::after {
+  content: "";
+  position: absolute;
+  left: 1.25rem;
+  top: 3rem;
+  bottom: 0.5rem;
+  width: 1px;
+  background: var(--carbon);
+  transform: scaleY(var(--llenado, 0));
+  transform-origin: top center;
+}
+
+.pasos--completos li::after {
+  transform: scaleY(1);
+}
+
+.pasos--vivos .paso__num {
+  color: var(--texto-suave);
+  transition: color 0.6s var(--ease-soft);
+}
+
+.pasos--vivos li.is-activo .paso__num {
+  color: var(--carbon);
 }
 
 .paso__num {
@@ -868,6 +987,10 @@ p {
 }
 
 .no-hacemos li {
+  display: grid;
+  grid-template-columns: 1.125rem 1fr;
+  column-gap: 0.875rem;
+  align-items: start;
   padding-block: 1.25rem 1.5rem;
   border-top: 1px solid var(--linea);
   font-size: clamp(1.0625rem, 1rem + 0.25vw, 1.1875rem);
@@ -896,6 +1019,10 @@ p {
 }
 
 .encaje__columna li {
+  display: grid;
+  grid-template-columns: 1.125rem 1fr;
+  column-gap: 0.875rem;
+  align-items: start;
   padding-block: 1.125rem;
   border-top: 1px solid var(--linea);
   font-size: clamp(1.0625rem, 1rem + 0.25vw, 1.1875rem);
@@ -926,11 +1053,6 @@ p {
 
 .equipo__foto {
   margin-top: 3.5rem;
-}
-
-.equipo__foto img {
-  width: 100%;
-  height: auto;
 }
 
 .equipo__foto figcaption {
@@ -964,10 +1086,10 @@ p {
 }
 
 .faq summary {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 1.5rem;
+  display: grid;
+  grid-template-columns: 2.25rem minmax(0, 1fr) auto;
+  align-items: start;
+  gap: 0 1rem;
   padding-block: 1.5rem;
   cursor: pointer;
   list-style: none;
@@ -1018,9 +1140,30 @@ p {
   transform: rotate(45deg);
 }
 
+.faq__num {
+  padding-top: 0.6em;
+  font-family: var(--fuente-texto);
+  font-size: 0.75rem;
+  font-weight: 500;
+  line-height: 1.5;
+  letter-spacing: 0.08em;
+  color: var(--texto-suave);
+  font-variant-numeric: tabular-nums;
+}
+
+.faq__pregunta {
+  transition: transform 0.5s var(--ease-out);
+}
+
+@media (hover: hover) {
+  .faq summary:hover .faq__pregunta {
+    transform: translateX(6px);
+  }
+}
+
 .faq__respuesta {
-  padding-bottom: 1.75rem;
-  max-width: 40em;
+  padding: 0 0 1.75rem calc(2.25rem + 1rem);
+  max-width: 42em;
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -1051,13 +1194,31 @@ p {
   }
 }
 
+.formulario__progreso {
+  height: 1px;
+  margin-bottom: 1.5rem;
+  background: var(--linea);
+  overflow: hidden;
+}
+
+.formulario__progreso span {
+  display: block;
+  height: 100%;
+  background: var(--carbon);
+  transform: scaleX(0.5);
+  transform-origin: left center;
+  transition: transform 0.9s var(--ease-out);
+}
+
+.formulario[data-paso-actual="2"] .formulario__progreso span {
+  transform: scaleX(1);
+}
+
 .formulario__paso-titulo {
   display: flex;
   align-items: baseline;
   gap: 1rem;
-  padding-bottom: 1rem;
   margin-bottom: 2.5rem;
-  border-bottom: 1px solid var(--linea);
   font-size: clamp(1.5rem, 1.3rem + 0.9vw, 2rem);
   font-weight: 400;
 }
@@ -1106,12 +1267,17 @@ p {
   width: 100%;
   min-height: 3.25rem;
   padding: 0.8rem 1rem;
-  background: var(--crema);
+  background-color: rgba(255, 255, 255, 0.4);
   border: 1px solid var(--borde-campo);
   border-radius: var(--radio);
   font-size: 1rem;      /* 16 px: evita el zoom automático en iOS */
   line-height: 1.4;
   appearance: none;
+  transition: border-color 0.3s var(--ease-soft), background-color 0.3s var(--ease-soft);
+}
+
+.campo__control:hover {
+  border-color: var(--carbon);
 }
 
 .campo__control::placeholder {
@@ -1176,10 +1342,10 @@ textarea.campo__control {
   padding: 0.75rem 1rem;
   border: 1px solid var(--linea);
   border-radius: var(--radio);
-  background: var(--crema);
+  background-color: rgba(255, 255, 255, 0.4);
   cursor: pointer;
   line-height: 1.35;
-  transition: border-color 150ms ease-out, background-color 150ms ease-out;
+  transition: border-color 0.3s var(--ease-soft), background-color 0.3s var(--ease-soft);
 }
 
 .opcion:hover {
@@ -1228,6 +1394,7 @@ textarea.campo__control {
   border-radius: 50%;
   background: var(--carbon);
   transform: scale(0);
+  transition: transform 0.3s var(--ease-out);
 }
 
 .opcion input[type="radio"]:checked::before {
@@ -1247,6 +1414,12 @@ textarea.campo__control {
   border-left: 2px solid var(--crema);
   border-bottom: 2px solid var(--crema);
   transform: rotate(-45deg) translate(0.03rem, -0.05rem) scale(0);
+  transition: transform 0.25s var(--ease-out);
+}
+
+.opcion input,
+.casilla input {
+  transition: background-color 0.2s var(--ease-soft), border-color 0.2s var(--ease-soft);
 }
 
 .opcion input[type="checkbox"]:checked,
@@ -1420,9 +1593,17 @@ textarea.campo__control {
 
 /* --- Pie --------------------------------------------------------------------- */
 .pie {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden; /* respaldo para Safari < 16 */
+  overflow: clip;
   background: var(--carbon);
   color: var(--crema);
   padding-block: clamp(3.5rem, 8vw, 6rem);
+}
+
+.pie > .contenedor {
+  position: relative;
 }
 
 .pie a,
@@ -1473,6 +1654,7 @@ textarea.campo__control {
 
 .pie__legal a,
 .pie__legal button {
+  position: relative;
   display: inline-flex;
   align-items: center;
   min-height: 2.75rem;
@@ -1480,9 +1662,7 @@ textarea.campo__control {
   background: none;
   border: 0;
   font-size: inherit;
-  text-decoration: underline;
-  text-decoration-thickness: 1px;
-  text-underline-offset: 0.25em;
+  text-decoration: none;
   cursor: pointer;
 }
 
@@ -1802,10 +1982,467 @@ textarea.campo__control {
   margin-top: 2.5rem;
 }
 
+/* ==========================================================================
+   Capa editorial: ornamentos, iconos y movimiento
+   Regla: el contenido se ve siempre. Con prefers-reduced-motion: reduce no hay
+   desplazamientos, parallax ni dibujos animados; solo cambios de color y
+   pequeños gestos al pasar el ratón.
+   ========================================================================== */
+
+/* --- Saltar al contenido -------------------------------------------------- */
+.saltar {
+  position: absolute;
+  z-index: 300;
+  top: 0.75rem;
+  left: 0.75rem;
+  padding: 0.75rem 1.125rem;
+  background: var(--carbon);
+  color: var(--crema);
+  border-radius: var(--radio);
+  font-weight: 500;
+  text-decoration: none;
+  transform: translateY(-200%);
+}
+
+.saltar:focus {
+  transform: none;
+}
+
+.saltar:focus-visible {
+  outline: 2px solid var(--carbon);
+  outline-offset: 3px;
+}
+
+main:focus {
+  outline: none;
+}
+
+/* --- Barra de progreso de lectura (filete terracota, decorativo) -------- */
+.progreso-lectura {
+  position: fixed;
+  z-index: 70;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  pointer-events: none;
+}
+
+.progreso-lectura span {
+  display: block;
+  height: 100%;
+  background: var(--terracota);
+  transform: scaleX(0);
+  transform-origin: 0 50%;
+}
+
+/* --- La flor de la marca, dibujada a línea ------------------------------ */
+.flor {
+  display: block;
+  overflow: visible;
+  fill: none;
+  stroke: var(--terracota);
+  stroke-width: 0.6;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  pointer-events: none;
+}
+
+.flor .flor__punto {
+  fill: var(--terracota);
+  stroke: none;
+}
+
+.flor .flor__aro {
+  stroke-width: 0.35;
+}
+
+.flor--cabecera {
+  position: absolute;
+  z-index: -1;
+  top: 5.5rem;
+  right: -4.5rem;
+  width: 10rem;
+  height: auto;
+  opacity: 0.45;
+}
+
+@media (min-width: 768px) {
+  .flor--cabecera {
+    top: 6rem;
+    right: var(--margen);
+    width: clamp(11rem, 18vw, 16rem);
+    opacity: 0.85;
+  }
+}
+
+@media (min-width: 1024px) {
+  .flor--cabecera {
+    top: 5.5rem;
+  }
+}
+
+.flor--cita {
+  width: 3.25rem;
+  height: 3.25rem;
+  margin: 0 auto clamp(2rem, 4vw, 2.75rem);
+  stroke-width: 3.4;
+}
+
+.flor--cita .flor__aro {
+  stroke-width: 2.2;
+}
+
+.flor--gracias {
+  width: 3.5rem;
+  height: 3.5rem;
+  margin-bottom: 1.75rem;
+  stroke-width: 3.2;
+}
+
+.flor--gracias .flor__aro {
+  stroke-width: 2;
+}
+
+.flor--pie {
+  position: absolute;
+  z-index: -1;
+  right: -7rem;
+  bottom: -8rem;
+  width: clamp(18rem, 36vw, 30rem);
+  height: auto;
+  stroke: rgba(245, 242, 235, 0.16);
+  stroke-width: 0.5;
+}
+
+.flor--pie .flor__punto {
+  fill: rgba(245, 242, 235, 0.16);
+}
+
+.flor--404 {
+  width: 5rem;
+  height: 5rem;
+  stroke-width: 2.6;
+}
+
+/* --- Iconos de línea ------------------------------------------------------ */
+.icono {
+  display: block;
+  flex: none;
+  width: 2.25rem;
+  height: 2.25rem;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  overflow: visible;
+}
+
+.icono--sector {
+  width: 2.5rem;
+  height: 2.5rem;
+  margin-bottom: 1.25rem;
+}
+
+.icono--marca {
+  width: 1.125rem;
+  height: 1.125rem;
+  margin-top: 0.3em;
+  stroke-width: 1.6;
+  color: var(--texto-suave);
+}
+
+/* --- Fotos: máscara al aparecer y parallax sutil ------------------------- */
+.foto {
+  overflow: hidden;
+}
+
+.foto img {
+  width: 100%;
+  height: auto;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .reveal-activo [data-reveal] .foto {
+    clip-path: inset(100% 0 0 0);
+    transition: clip-path 1.3s var(--ease-out) 0.1s;
+  }
+
+  .reveal-activo [data-reveal].is-visible .foto {
+    clip-path: inset(0 0 0 0);
+  }
+
+  .reveal-activo [data-reveal] .foto img {
+    scale: 1.12;
+    transition: scale 1.8s var(--ease-out) 0.1s;
+  }
+
+  .reveal-activo [data-reveal].is-visible .foto img {
+    scale: 1;
+  }
+}
+
+@media (min-width: 960px) and (prefers-reduced-motion: no-preference) {
+  .foto img[data-parallax],
+  .reveal-activo [data-reveal].is-visible .foto img[data-parallax] {
+    scale: 1.06;
+  }
+}
+
+@media (hover: hover) and (prefers-reduced-motion: no-preference) {
+  .portafolio .foto img {
+    transition: scale 1.2s var(--ease-out);
+  }
+
+  .portafolio figure:hover .foto img {
+    scale: 1.1;
+  }
+}
+
+/* --- Letra capitular (La idea) ------------------------------------------- */
+[data-capitular] > p:first-child::first-letter {
+  float: left;
+  margin: 0.06em 0.12em 0 -0.03em;
+  font-family: var(--fuente-titulos);
+  font-size: 4.35em;
+  font-weight: 400;
+  line-height: 0.8;
+  color: var(--carbon);
+}
+
+/* --- Cita que se "imprime" palabra a palabra ------------------------------
+   Antes de encenderse, cada palabra está en #7D7972 (3,87:1 sobre crema;
+   la cita es texto grande, que exige 3:1). */
+.cita--imprimible .cita__palabra {
+  color: var(--borde-campo);
+  transition: color 0.5s var(--ease-soft);
+}
+
+.cita--imprimible .cita__palabra.is-on {
+  color: var(--carbon);
+}
+
+/* --- Subrayado animado en enlaces de texto -------------------------------- */
+.enlace-flecha::after,
+.boton-volver::after,
+.pie__legal a::after,
+.pie__legal button::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: calc(50% - 0.85em);
+  height: 1px;
+  background: currentColor;
+  transform-origin: left center;
+}
+
+@media (hover: hover) {
+  .enlace-flecha:hover::after,
+  .boton-volver:hover::after,
+  .pie__legal a:hover::after,
+  .pie__legal button:hover::after {
+    animation: subrayado 0.7s var(--ease-out);
+  }
+}
+
+@keyframes subrayado {
+  0% { transform: scaleX(1); transform-origin: right center; }
+  45% { transform: scaleX(0); transform-origin: right center; }
+  46% { transform: scaleX(0); transform-origin: left center; }
+  100% { transform: scaleX(1); transform-origin: left center; }
+}
+
+/* --- CTA principal: el texto rueda al pasar el ratón --------------------- */
+.cta__texto {
+  display: inline-grid;
+  overflow: hidden;
+  height: 1.3em;
+  line-height: 1.3;
+}
+
+.cta__linea {
+  grid-area: 1 / 1;
+  transition: transform 0.55s var(--ease-out);
+}
+
+.cta__linea + .cta__linea {
+  transform: translateY(105%);
+}
+
+@media (hover: hover) and (prefers-reduced-motion: no-preference) {
+  .cta:hover .cta__linea:first-child,
+  .cta:focus-visible .cta__linea:first-child {
+    transform: translateY(-105%);
+  }
+
+  .cta:hover .cta__linea + .cta__linea,
+  .cta:focus-visible .cta__linea + .cta__linea {
+    transform: none;
+  }
+}
+
+/* --- Cabecera: entrada al cargar (solo CSS, no depende de JavaScript) ---- */
+@media (prefers-reduced-motion: no-preference) {
+  .barra__logo {
+    animation: aparece 1s var(--ease-out) both;
+  }
+
+  .cabecera__antetitulo {
+    border-bottom-color: transparent;
+    animation: aparece 1s var(--ease-out) 0.1s both;
+  }
+
+  .cabecera__antetitulo::after {
+    content: "";
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: -1px;
+    height: 1px;
+    background: var(--linea);
+    transform-origin: left center;
+    animation: dibuja-filete 1.6s var(--ease-out) 0.2s both;
+  }
+
+  /* El titular es el elemento LCP: empieza a emerger sin retardo. */
+  .cabecera__linea {
+    animation: emerge 1.1s var(--ease-out) both;
+  }
+
+  .cabecera__linea + .cabecera__linea {
+    animation-delay: 0.1s;
+  }
+
+  .cabecera__subtitulo {
+    animation: sube 1s var(--ease-out) 0.45s both;
+  }
+
+  .cabecera__accion {
+    animation: sube 1s var(--ease-out) 0.6s both;
+  }
+
+  .flor--cabecera {
+    animation: gira 240s linear 2.6s infinite;
+  }
+
+  .flor--cabecera path,
+  .flor--cabecera circle:not(.flor__punto) {
+    stroke-dasharray: 1 2;
+    animation: dibuja 2.8s var(--ease-out) 0.35s both;
+  }
+
+  .flor--cabecera .flor__petalos path:nth-child(2) { animation-delay: 0.5s; }
+  .flor--cabecera .flor__petalos path:nth-child(3) { animation-delay: 0.65s; }
+  .flor--cabecera .flor__petalos path:nth-child(4) { animation-delay: 0.8s; }
+  .flor--cabecera .flor__petalos path:nth-child(5) { animation-delay: 0.95s; }
+
+  .flor--cabecera .flor__punto {
+    animation: aparece 1s var(--ease-out) 1.6s both;
+  }
+
+  /* Flor de la cita y de la página de gracias: se dibujan al aparecer. */
+  .reveal-activo [data-reveal] .flor--cita path,
+  .reveal-activo [data-reveal] .flor--cita circle:not(.flor__punto) {
+    stroke-dasharray: 1 2;
+    stroke-dashoffset: 1;
+    transition: stroke-dashoffset 2.2s var(--ease-out) 0.2s;
+  }
+
+  .reveal-activo [data-reveal].is-visible .flor--cita path,
+  .reveal-activo [data-reveal].is-visible .flor--cita circle:not(.flor__punto) {
+    stroke-dashoffset: 0;
+  }
+
+  .flor--gracias path,
+  .flor--gracias circle:not(.flor__punto) {
+    stroke-dasharray: 1 2;
+    animation: dibuja 2.2s var(--ease-out) 0.15s both;
+  }
+
+  .gracias h3 {
+    animation: emerge 1.1s var(--ease-out) 0.2s both;
+  }
+
+  .gracias p,
+  .gracias .enlace-flecha {
+    animation: sube 1s var(--ease-out) 0.45s both;
+  }
+
+  .flor--pie {
+    animation: gira 300s linear infinite reverse;
+  }
+
+  /* Paso del formulario que entra. */
+  .formulario__paso.is-entrando {
+    animation: entra-paso 0.7s var(--ease-out) both;
+  }
+
+  /* Respuesta de la FAQ al abrirse. */
+  .faq details[open]:not(.is-cerrando) .faq__respuesta {
+    animation: sube 0.6s var(--ease-out) both;
+  }
+
+  /* Banner de cookies: entra desde abajo. */
+  .consent:not([hidden]) {
+    animation: entra-banner 0.7s var(--ease-out) both;
+  }
+}
+
+@keyframes aparece {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes sube {
+  from { opacity: 0; transform: translateY(12px); }
+  to { opacity: 1; transform: none; }
+}
+
+@keyframes emerge {
+  from {
+    clip-path: inset(100% -0.5em -0.4em -0.5em);
+    transform: translateY(0.35em);
+  }
+  to {
+    clip-path: inset(-0.4em -0.5em -0.4em -0.5em);
+    transform: none;
+  }
+}
+
+@keyframes dibuja-filete {
+  from { transform: scaleX(0); }
+  to { transform: scaleX(1); }
+}
+
+@keyframes dibuja {
+  from { stroke-dashoffset: 1; }
+  to { stroke-dashoffset: 0; }
+}
+
+@keyframes gira {
+  to { transform: rotate(360deg); }
+}
+
+@keyframes entra-paso {
+  from { opacity: 0; transform: translateX(16px); }
+  to { opacity: 1; transform: none; }
+}
+
+@keyframes entra-banner {
+  from { transform: translateY(100%); }
+  to { transform: none; }
+}
+
 /* --- Impresión ----------------------------------------------------------- */
 @media print {
   .barra-fija,
   .consent {
     display: none !important;
   }
+}
+
+.no-encontrada__meta {
+  margin-top: 2rem;
 }

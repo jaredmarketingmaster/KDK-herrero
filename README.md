@@ -20,14 +20,15 @@ Landing de captación para **KDK Design** (tráfico de Meta Ads en España). Sit
 /assets/js/datalayer.js          Helper del dataLayer, cta_click y faq_open
 /assets/js/formulario.js         Formulario en dos pasos, validación, envío y página de gracias
 /assets/js/portafolio.js         Secciones de vídeo y portafolio (solo si hay material)
-/assets/js/main.js               Numeración de secciones, animación, barra fija, pie
+/assets/js/main.js               Numeración de secciones, movimiento editorial, barra fija, pie
 /assets/fonts/                   Inter y Playfair Display autoalojadas (WOFF2) + licencias OFL
-/assets/img/logo-kdk.png         Logo (fondo eliminado y recortado a partir del archivo aportado)
+/assets/img/logo-kdk.webp        Logo (fondo eliminado y recortado a partir del archivo aportado)
 /assets/img/favicon.png          Favicon (flor del logo)
 /assets/img/apple-touch-icon.png Icono para iOS (flor del logo sobre crema)
 /assets/img/foto-equipo.jpg      MARCADOR AMARILLO: sustituir por la foto real
 /assets/portafolio/              Vacía: aquí van las piezas del portafolio
 /.nojekyll                       GitHub Pages sirve los archivos tal cual
+/.htaccess                       Caché y compresión en Hostinger / Apache / LiteSpeed
 ```
 
 `main.js` no estaba en la estructura del encargo: se ha añadido para el comportamiento general de la página (ver sección 9).
@@ -237,7 +238,33 @@ La landing y las páginas legales llevan `<meta name="robots" content="noindex, 
 - Colores: tokens de `:root` en `styles.css`. Proporción 80/15/5. Terracota, melocotón y salvia solo como decoración (filetes, puntos, fondos de etiquetas con texto carbón, selección de texto).
 - Tipografía: Playfair Display (titulares y cifras, 400/600 y cursiva 400) e Inter (cuerpo, 400/500), escala fluida con `clamp()`; H1 entre 2,6rem y 5,5rem.
 - Grilla de 12 columnas, contenedor de 1200 px, filetes de 1 px, sin sombras ni degradados, radio máximo de 2 px en cajas y botones.
-- Animación de aparición (fundido + 12 px, 400 ms) con `IntersectionObserver`; desactivada con `prefers-reduced-motion`.
+- Arquetipo "revista impresa": todo el movimiento es editorial y sirve a la lectura. No hay imágenes de stock, librerías externas, pantalla de carga ni cursor personalizado.
+
+### 7.1 Capa editorial (ornamentos, iconos y movimiento)
+
+| Elemento | Qué hace | Dónde |
+| --- | --- | --- |
+| Textura de papel | Ruido fino centrado en el crema de marca: la media medida es (245, 242, 235) = #F5F2EB, con ±3,7 niveles de variación | `--grano` y `--grano-calido` en `styles.css` |
+| Barra de progreso de lectura | Filete terracota de 2 px en la parte superior (landing y páginas legales) | `main.js` |
+| Flor de la marca a línea | Ornamento derivado del logo: se dibuja en la cabecera y gira muy despacio; también sobre la cita, en el pie, en la página de gracias y en la 404 | SVG en el HTML |
+| Entrada de la cabecera | El filete se dibuja, el titular emerge línea a línea y el resto aparece en cascada. Solo CSS, no depende de JavaScript | `styles.css` |
+| Cabeceras de sección | El filete superior se dibuja, el número aparece y el titular emerge | `styles.css` + `main.js` |
+| Aparición escalonada | Fundido + 12 px, 800 ms, con retraso progresivo en listas y rejillas | `[data-reveal]`, `[data-escalonado]` |
+| Iconos de línea propios | 11 iconos de trazo fino que se dibujan al aparecer (sin logos de marcas ajenas: para "publicar en Instagram y TikTok" se usa un avión de papel) | SVG en el HTML |
+| Letra capitular | Primera letra de "La idea" en Playfair | `[data-capitular]` |
+| Cita que se imprime | Las palabras pasan de gris (#7D7972, 3,87:1, válido para texto grande) a carbón según se lee. Los lectores de pantalla reciben el texto completo | `[data-cita-palabras]` |
+| Línea de tiempo | La línea de "Así trabajamos" se rellena con el scroll y cada número se activa al llegar | `[data-pasos]` |
+| Fotos | Máscara que se abre al aparecer y parallax de 16 px como máximo (solo escritorio) | `.foto`, `[data-parallax]` |
+| FAQ | Índice numerado y apertura con altura animada | `main.js` |
+| Formulario | Filete de progreso 50 % → 100 % y transición entre pasos | `formulario.js` |
+| CTA principal | El texto rueda al pasar el ratón y la flecha se desplaza 4 px | `.cta__texto` |
+| Enlaces | Subrayado que se redibuja al pasar el ratón | `styles.css` |
+
+Reglas de robustez:
+- **Todo el contenido está en el HTML:** sin JavaScript se ve la página completa.
+- **Fallos aislados:** cada módulo de `main.js` va envuelto en `safe()`, así que si uno falla los demás siguen funcionando. Hay un único bucle de scroll.
+- **Revelado:** el observador usa un umbral de 0,01 y, a los 6 s, una red de seguridad muestra lo que siga oculto.
+- **Movimiento reducido:** con `prefers-reduced-motion: reduce` no hay desplazamientos, parallax, dibujos animados ni giros. El contenido se ve desde el principio, la cita aparece completa y la línea de tiempo, rellena. Se mantienen los cambios de color, el subrayado y la flecha de 4 px al pasar el ratón.
 
 **Tipografías autoalojadas.** Se sirven desde `assets/fonts/` en vez de desde los servidores de Google, para que no haya peticiones a Google sin consentimiento. Son subconjuntos latinos (incluyen el símbolo del euro, ¿, ¡, tildes, ñ y flechas). Playfair Display tiene "Reserved Font Name" en su licencia OFL: al recortarla, la licencia prohíbe usar ese nombre en la versión modificada, así que internamente y en el CSS se llama **"KDK Display Serif"**. El diseño es el de Playfair Display. Licencias en `assets/fonts/OFL-*.txt`.
 
@@ -251,7 +278,14 @@ Es un sitio estático: se publica la carpeta tal cual, sin compilación.
 - **Netlify:** importar el repositorio sin comando de compilación y con la raíz como carpeta de publicación (o arrastrar la carpeta a Netlify Drop).
 - **Vercel:** importar el repositorio con el preset "Other", sin comando de compilación y con la raíz como carpeta de salida.
 
+- **Hostinger (o cualquier Apache / LiteSpeed):** subir el contenido de la carpeta a `public_html` con el Administrador de archivos o por FTP, incluido el archivo oculto `.htaccess`.
+
 Los nombres de los menús de cada servicio pueden cambiar. GitHub Pages y Netlify usan `404.html` automáticamente; en Vercel, compruébalo tras el primer despliegue.
+
+**Caché (importante en cada actualización):**
+- Todas las hojas de estilo y scripts se cargan con `?v=20261012`. **En cada despliegue que cambie CSS o JS (incluido `config.js`), cambia esa fecha en las cuatro páginas HTML** (y en `404.html` para la hoja de estilos) para que nadie vea una versión antigua guardada en caché.
+- `.htaccess` hace que HTML, CSS y JS se revaliden en cada visita y que imágenes y fuentes se guarden un mes. Comprime con gzip. Solo funciona en Apache/LiteSpeed (Hostinger); en Nginx, Netlify, Vercel o GitHub Pages no tiene efecto y la protección es el `?v=`.
+- Si publicas en un subdirectorio, enlaza la URL con barra final (`…/landing/`): sin ella, algunos servidores resuelven mal las rutas relativas.
 
 Notas:
 - Este `README.md` y los borradores legales quedan accesibles públicamente si se publica la raíz del repositorio. No contienen secretos.
@@ -275,6 +309,15 @@ Todo el copy de la sección 5 del encargo es literal. Estas son las decisiones q
 9. **Títulos de sección** sin "Titular" en el encargo: "Preguntas frecuentes" (nombre de la sección) y, en "Para quién es y para quién no", los encabezados de las dos columnas. En "Por tipo de negocio", los títulos de las columnas van sin los dos puntos finales.
 10. **Eventos:** `form_error` se envía una vez por campo con error y con `field: "envio"` si falla el servidor; `form_step_complete`, una vez por carga de página.
 11. **Páginas legales** también con `noindex, follow`.
+12. **Capa editorial (petición posterior).** El encargo pedía un movimiento mínimo: fundido + 12 px en 400 ms. A petición expresa, se ha enriquecido (sección 7.1) manteniendo el tono de lujo silencioso: 12 px, 800 ms, cascadas, filetes que se dibujan, ornamentos e iconos. No se han añadido textos de marketing nuevos. La flor es un ornamento derivado del logo y los iconos son decorativos (`aria-hidden`).
+13. **Reglas del skill de webs premium que no se han aplicado, y por qué:**
+    - **Sin GSAP, Lenis ni Three.js:** el encargo no admite dependencias. Todo es CSS y JavaScript propios.
+    - **Sin imágenes de stock (Openverse):** el encargo las prohíbe.
+    - **Sin pantalla de carga ni cursor personalizado:** retrasarían la primera impresión de un tráfico de pago que llega sobre todo desde móvil.
+    - **`prefers-reduced-motion` sí desactiva el movimiento:** el skill recomienda mantener las microinteracciones, pero el encargo pide expresamente respetar esta preferencia.
+    - **Formatos de imagen:** el logo pasa a WebP (5,9 KB frente a 14,3 KB, con los píxeles visibles idénticos). `foto-equipo.jpg` sigue en JPG porque esa ruta la fija el encargo, y los iconos de la pestaña y de iOS siguen en PNG, que es su formato estándar.
+    - **Puntos de corte:** se mantienen 480/640/768/1024 px, ya probados a 360–1440 px.
+14. **`config.js` y `consent.js` ahora se cargan con `defer`.** Es seguro: GTM solo lo carga `consent.js`, después de fijar el consentimiento por defecto, y los `defer` se ejecutan en orden. La página ya no tiene scripts que bloqueen el pintado.
 
 ---
 
@@ -286,7 +329,7 @@ Pruebas automáticas con Playwright (Chromium 141) sirviendo el sitio desde un s
 | --- | --- | --- |
 | 1 | Palabras y cifras prohibidas | Cumple en el sitio (HTML, CSS y JS): ninguna palabra, cifra ni marca de la lista, y sin voseo. El símbolo del euro solo aparece en las opciones del formulario y las palabras permitidas solo donde el encargo las permite. Dos apariciones más de la familia de "garantía", ambas copy literal del encargo que niega garantías: la segunda frase de "No es para ti si:" (sección 10) y el §5 del aviso legal |
 | 2 | Acentos nunca como color de texto ni fondo de botón | Cumple (solo filetes, puntos, fondos de etiquetas con texto carbón y selección de texto) |
-| 3 | Contraste AA | Cumple. Carbón/crema 15,24:1 · texto suave/crema 6,96:1 · error/crema 6,16:1 · crema/carbón 15,24:1 · carbón/marcador 13,39:1 · carbón/melocotón 10,55:1 · carbón/salvia 7,62:1 · bordes de campos 3,87:1 (WCAG 1.4.11). axe-core sin violaciones |
+| 3 | Contraste AA | Cumple. Carbón/crema 15,24:1 · texto suave/crema 6,96:1 · error/crema 6,16:1 · crema/carbón 15,24:1 · carbón/marcador 13,39:1 · carbón/melocotón 10,55:1 · carbón/salvia 7,62:1 · bordes de campos 3,87:1 (WCAG 1.4.11). Sobre el píxel más oscuro de la textura de papel: carbón 13,67:1 · texto suave 6,25:1 · error 5,53:1 · cita apagada (texto grande) 3,47:1. axe-core sin violaciones (con la textura, axe deja muchos nodos como "sin determinar"; por eso el cálculo manual) |
 | 4 | Sin vídeo ni portafolio, las secciones no existen en el DOM | Cumple; la numeración se ajusta (01–11) |
 | 5 | Cabecera tipográfica a 360 px | Cumple |
 | 6 | Casillas sin marcar, obligatorias bloquean el envío, aviso de IA junto al botón | Cumple |
@@ -298,14 +341,24 @@ Pruebas automáticas con Playwright (Chromium 141) sirviendo el sitio desde un s
 | 12 | Lighthouse móvil | Ver abajo |
 | 13 | README con pendientes agrupados | Este documento |
 
-También comprobado: sin scroll horizontal a 360, 390, 768, 1024 y 1440 px; sin errores en consola; foco visible; `prefers-reduced-motion` desactiva animación y desplazamiento suave.
+También comprobado:
+- Sin scroll horizontal a 360, 390, 768, 1024 y 1440 px.
+- Sin errores en consola servido por HTTP.
+- Foco visible y enlace "Saltar al contenido".
+- `prefers-reduced-motion` desactiva todo el movimiento.
+- Con JavaScript desactivado se ve todo el contenido.
+
+Abierto con doble clic (`file://`), Chrome muestra avisos de CORS sobre la precarga de fuentes: es una limitación de `file://`, y las fuentes cargan igualmente. Servido por HTTP no aparecen.
 
 ### Lighthouse móvil
 
-Lighthouse 13.5.0, perfil móvil con limitación simulada, sitio servido en local, configuración vacía (sin GTM, vídeo ni portafolio). Tres ejecuciones con el mismo resultado:
+Lighthouse 13.5.0, perfil móvil con limitación simulada, sitio servido en local, configuración vacía (sin GTM, vídeo ni portafolio), tres ejecuciones por caso:
 
-| Rendimiento | Accesibilidad | Buenas prácticas | SEO |
-| --- | --- | --- | --- |
-| 98 | 100 | 100 | 63 |
+| Servidor de prueba | Rendimiento | Accesibilidad | Buenas prácticas | SEO | FCP | LCP | CLS |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| Con compresión gzip (como Hostinger con el `.htaccess`, Netlify o GitHub Pages) | 99 | 100 | 100 | 63 | 1,2 s | 1,8 s | 0 |
+| Sin compresión | 97 | 100 | 100 | 63 | 1,5 s | 2,6 s | 0 |
 
-FCP 1,5 s · LCP 2,3 s · TBT 0–20 ms · CLS 0 · Speed Index 1,5 s. La única auditoría SEO que falla es "is-crawlable", por el `noindex` intencionado. Las cifras reales cambiarán con el alojamiento definitivo y al activar GTM, el Pixel y Clarity: conviene repetir la medición tras publicar.
+Para comparar, la versión anterior a la capa editorial, medida con gzip en las mismas condiciones, daba Rendimiento 99, FCP 1,4 s y LCP 1,9 s. La capa editorial no empeora el rendimiento real.
+
+La única auditoría SEO que falla es "is-crawlable", por el `noindex` intencionado. Las cifras cambiarán con el alojamiento definitivo y al activar GTM, el Pixel y Clarity, así que conviene repetir la medición tras publicar.
